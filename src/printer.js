@@ -14,6 +14,7 @@ const {
   ifBreak,
   hardline,
   softline,
+  literalline,
   align,
   dedentToRoot
 } = require("prettier").doc.builders;
@@ -563,6 +564,14 @@ function printArgumentsList(path, options, print, argumentsKey = "arguments") {
     const arg = argPath.getNode();
     const parts = [print(argPath)];
 
+    if (
+      index !== lastArgIndex &&
+      ((arg.kind === "encapsed" && arg.type === "heredoc") ||
+        arg.kind === "nowdoc")
+    ) {
+      parts.push(hardline);
+    }
+
     if (index === lastArgIndex) {
       // do nothing
     } else if (isNextLineEmpty(options.originalText, arg, options)) {
@@ -804,13 +813,38 @@ function printExpression(path, options, print) {
   const lookupKinds = ["propertylookup", "staticlookup", "offsetlookup"];
   function printLookup(node) {
     switch (node.kind) {
-      case "propertylookup":
+      case "propertylookup": {
+        const parent = path.getParentNode();
+        let firstNonMemberParent;
+        let i = 0;
+        do {
+          firstNonMemberParent = path.getParentNode(i);
+          i++;
+        } while (firstNonMemberParent && isMemberish(firstNonMemberParent));
+
+        const shouldInline =
+          (firstNonMemberParent && firstNonMemberParent.kind === "new") ||
+          (node.what.kind === "variable" &&
+            (node.offset.kind === "constref" ||
+              node.offset.kind === "variable") &&
+            !isMemberish(parent));
+
         return group(
           concat([
             path.call(print, "what"),
-            printPropertyLookup(path, options, print)
+            shouldInline
+              ? printPropertyLookup(path, options, print)
+              : group(
+                  indent(
+                    concat([
+                      softline,
+                      printPropertyLookup(path, options, print)
+                    ])
+                  )
+                )
           ])
         );
+      }
       case "staticlookup":
         return concat([
           path.call(print, "what"),
@@ -1042,9 +1076,10 @@ function printExpression(path, options, print) {
           return group(concat(path.map(print, "value")));
         }
         return concat([
+          node.type === "heredoc" ? breakParent : "",
           getEncapsedQuotes(node),
           // Respect `indent` for `heredoc` nodes
-          node.type === "heredoc" ? "\n" : "",
+          node.type === "heredoc" ? literalline : "",
           concat(
             path.map(valuePath => {
               const node = valuePath.getValue();
@@ -1078,14 +1113,15 @@ function printExpression(path, options, print) {
       case "nowdoc":
         // Respect `indent` for `nowdoc` nodes
         return concat([
+          breakParent,
           "<<<'",
           node.label,
           "'",
-          "\n",
+          literalline,
           node.value,
-          "\n",
+          literalline,
           node.label,
-          docShouldHaveTrailingNewline(path) ? "\n" : ""
+          docShouldHaveTrailingNewline(path) ? hardline : ""
         ]);
       default:
         return `Have not implemented literal kind ${node.kind} yet.`;
