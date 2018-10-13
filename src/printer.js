@@ -976,7 +976,7 @@ function printLines(path, options, print, childrenAttribute = "children") {
               isFirstNode ? openTag : "",
               hardline,
               comments.printComments(childNode.leadingComments, options),
-              "?>"
+              isLastNode ? "" : "?>"
             ])
           : isProgramLikeNode(node) && isFirstNode
             ? ""
@@ -987,7 +987,7 @@ function printLines(path, options, print, childrenAttribute = "children") {
               openTag,
               hardline,
               comments.printComments(childNode.comments, options),
-              "?>"
+              isLastNode ? "" : "?>"
             ])
           : isProgramLikeNode(node) && isLastNode
             ? ""

@@ -763,6 +763,9 @@ function hasLeadingOwnLineComment(text, node, options) {
 function printComments(comments, options) {
   const parts = [];
   comments.forEach((comment, index, comments) => {
+    if (comment.printed) {
+      return;
+    }
     comment.printed = true;
     parts.push(comment.value);
     parts.push(hardline);

@@ -1893,6 +1893,20 @@ $var = 2;
 
 `;
 
+exports[`mixed-53.php - php-verify: mixed-53.php 1`] = `
+<?php
+if (true) {
+    ?>inline<?php
+    // comment
+}
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+<?php
+if (true) {
+    ?>inline<?php
+    // comment
+}
+`;
+
 exports[`only-html.php - php-verify: only-html.php 1`] = `
 <!DOCTYPE html>
 <html>
